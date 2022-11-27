@@ -1,7 +1,14 @@
 import 'dart:io';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:my_app/utils/firestore/users.dart';
+
+import '../../model/account.dart';
+import '../../utils/authentication.dart';
 
 class CreateAccountPage extends StatefulWidget {
   @override
@@ -10,7 +17,7 @@ class CreateAccountPage extends StatefulWidget {
 
 class _CreateAccountPageStateState extends State<CreateAccountPage> {
   TextEditingController nameController = TextEditingController();
-  TextEditingController userIDController = TextEditingController();
+  TextEditingController userIdController = TextEditingController();
   TextEditingController selfIntroductionController = TextEditingController();
   TextEditingController emailController = TextEditingController();
   TextEditingController passController = TextEditingController();
@@ -24,6 +31,15 @@ class _CreateAccountPageStateState extends State<CreateAccountPage> {
         image = File(pickedFile.path);
       });
     }
+  }
+
+  Future<String> uploadImage(String uid) async {
+    final FirebaseStorage storageInstance = FirebaseStorage.instance;
+    final Reference ref = storageInstance.ref();
+    await ref.child(uid).putFile(image!);
+    String downloadUrl = await storageInstance.ref(uid).getDownloadURL();
+    print('image_path: $downloadUrl');
+    return downloadUrl;
   }
 
   @override
@@ -64,7 +80,7 @@ class _CreateAccountPageStateState extends State<CreateAccountPage> {
                 child: Container(
                   width: 300,
                   child: TextField(
-                    controller: userIDController,
+                    controller: userIdController,
                     decoration: InputDecoration(hintText:'ユーザーID'),
                   ),
                 ),
@@ -94,14 +110,28 @@ class _CreateAccountPageStateState extends State<CreateAccountPage> {
                 ),
               ),
               SizedBox(height: 50),
-              ElevatedButton(onPressed: () {
+              ElevatedButton(onPressed: () async{
                 if(nameController.text.isNotEmpty &&
-                    userIDController.text.isNotEmpty &&
+                    userIdController.text.isNotEmpty &&
                     selfIntroductionController.text.isNotEmpty &&
                     emailController.text.isNotEmpty &&
                     passController.text.isNotEmpty &&
                     image != null) {
-                    Navigator.pop(context);
+                    var result = await Authentication.signUp(email:emailController.text,pass:passController.text);
+                    if(result is UserCredential) {
+                      String imagePath = await uploadImage(result.user!.uid);
+                      Account newAccount = Account (
+                        id: result.user!.uid,
+                        name: nameController.text,
+                        userId: userIdController.text,
+                        selfIntroduction: selfIntroductionController.text,
+                        imagePath: imagePath,
+                      );
+                      var _result = await UserFirestore.setUser(newAccount);
+                      if(_result == true) {
+                        Navigator.pop(context);
+                      }
+                    }
                 }
               }, child: Text('アカウントを作成')),
             ]
