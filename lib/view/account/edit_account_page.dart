@@ -9,6 +9,7 @@ import 'package:my_app/utils/function_utils.dart';
 import '../../model/account.dart';
 import '../../utils/authentication.dart';
 import '../../utils/widget_utils.dart';
+import '../start_up/login_page.dart';
 
 class EditAccountPage extends StatefulWidget {
   const EditAccountPage({Key? key}) : super(key: key);
@@ -115,7 +116,19 @@ class _EditAccountPageState extends State<EditAccountPage> {
                     }
                   }
                 }, child: Text('更新')),
-              ]
+                SizedBox(height: 50),
+                ElevatedButton(
+                    onPressed: (){
+                      Authentication.signOut();
+                      while(Navigator.canPop(context)){
+                        Navigator.pop(context);
+                      }
+                      Navigator.pushReplacement(context, MaterialPageRoute(
+                          builder: (context) => LoginPage()
+                      ));
+                   },
+                    child: Text('ログアウト'))
+              ],
           ),
         ),
       ),
