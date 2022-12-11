@@ -11,6 +11,7 @@ import '../../model/account.dart';
 import '../../utils/authentication.dart';
 import '../../utils/function_utils.dart';
 import '../../utils/widget_utils.dart';
+import 'check_email_page.dart';
 
 class CreateAccountPage extends StatefulWidget {
   @override
@@ -111,7 +112,11 @@ class _CreateAccountPageStateState extends State<CreateAccountPage> {
                       );
                       var _result = await UserFirestore.setUser(newAccount);
                       if(_result == true) {
-                        Navigator.pop(context);
+                        result.user!.sendEmailVerification();
+                        Navigator.push(context, MaterialPageRoute(
+                            builder: (context) => CheckEmailPage(
+                                email: emailController.text,
+                                pass: passController.text)));
                       }
                     }
                 }
